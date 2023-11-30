@@ -7,9 +7,9 @@
 #IncludeRegexTransform: 
 
 /home/nikk_yrsh/workspaces/rosbot_ws/src/rosbot_bath/src/imu_controller.cpp
-ros/ros.h
--
 geometry_msgs/PoseStamped.h
+-
+ros/ros.h
 -
 sensor_msgs/Imu.h
 -
