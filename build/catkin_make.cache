@@ -1,0 +1,2 @@
+rosbot_bath
+-DCATKIN_DEVEL_PREFIX=/home/nikk_yrsh/workspaces/rosbot_ws/devel -DCMAKE_INSTALL_PREFIX=/home/nikk_yrsh/workspaces/rosbot_ws/install -G Unix Makefiles
