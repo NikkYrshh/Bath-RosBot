@@ -2,8 +2,8 @@
 #define ROSBOT_CLASS_H
 
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
 
 #include "geometry_msgs/Twist.h"
 #include "nav_msgs/Odometry.h"
@@ -15,7 +15,7 @@
 class ROSbot {
  private:
   std::unique_ptr<ros::NodeHandle> nh;
-  
+
   std::vector<float> laser_range;
   // subscribers
   ros::Subscriber laser_sub;
@@ -44,11 +44,11 @@ class ROSbot {
   void move_backwards(int time);
   void turn(std::string clock, int time);
   void stop();
-  float get_position(int param);
-  std::list<float> get_position_full();
+  float get_pos(int param);
+  std::list<float> get_complete_pos();
   double get_time();
   float get_laser(int index);
-  float *get_laser_full();
+  std::unique_ptr<float[]> get_complete_laser();
 };
 
 #endif  // ROSBOT_CLASS_H
