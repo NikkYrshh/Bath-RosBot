@@ -14,7 +14,7 @@
 
 class ROSbot {
  private:
-  std::unique_ptr<ros::NodeHandle> nh;
+  ros::NodeHandle nh;
 
   std::vector<float> laser_range;
   // subscribers
