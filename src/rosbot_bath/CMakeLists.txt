@@ -2,13 +2,19 @@ cmake_minimum_required(VERSION 3.0.2)
 project(rosbot_bath)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++14)
 
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp tf
+  roscpp 
+  tf
+  rospy
+  std_msgs
+  nav_msgs
+  sensor_msgs
+
 )
 
 ## System dependencies are found with CMake's conventions
@@ -114,7 +120,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-# include
+include
  ${catkin_INCLUDE_DIRS}
 )
 
@@ -133,6 +139,8 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/rosbot_bath_node.cpp)
 add_executable(imu_controller_node src/imu_controller.cpp)
+add_executable(rosbot_class src/rosbot_class.cpp)
+
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -143,6 +151,8 @@ add_executable(imu_controller_node src/imu_controller.cpp)
 ## Add cmake target dependencies of the executable
 ## same as for the library above
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_dependencies(rosbot_class ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -151,6 +161,11 @@ add_executable(imu_controller_node src/imu_controller.cpp)
 target_link_libraries(imu_controller_node
    ${catkin_LIBRARIES}
 )
+
+target_link_libraries(rosbot_class
+   ${catkin_LIBRARIES}
+)
+
 
 #############
 ## Install ##
@@ -181,11 +196,11 @@ target_link_libraries(imu_controller_node
 # )
 
 ## Mark cpp header files for installation
-# install(DIRECTORY include/${PROJECT_NAME}/
-#   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#   FILES_MATCHING PATTERN "*.h"
-#   PATTERN ".svn" EXCLUDE
-# )
+ install(DIRECTORY include/${PROJECT_NAME}/
+   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+   FILES_MATCHING PATTERN "*.h"
+   PATTERN ".svn" EXCLUDE
+ )
 
 install(DIRECTORY launch
 	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
