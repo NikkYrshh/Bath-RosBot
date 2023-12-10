@@ -128,18 +128,26 @@ include
 # add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/rosbot_bath.cpp
 # )
+add_library(rosbot_lib
+  src/rosbot_class.cpp
+)
 
 ## Add cmake target dependencies of the library
 ## as an example, code may need to be generated before libraries
 ## either from message generation or dynamic reconfigure
 # add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+add_dependencies(rosbot_lib ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(rosbot_lib
+  ${catkin_LIBRARIES}
+)
 
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/rosbot_bath_node.cpp)
 add_executable(imu_controller_node src/imu_controller.cpp)
-add_executable(rosbot_class src/rosbot_class.cpp)
+add_executable(rosbot_move src/rosbot_move_node.cpp)
+
 
 
 ## Rename C++ executable without prefix
@@ -153,6 +161,7 @@ add_executable(rosbot_class src/rosbot_class.cpp)
 # add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 #add_dependencies(rosbot_class ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
+add_dependencies(rosbot_move ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 # target_link_libraries(${PROJECT_NAME}_node
@@ -162,7 +171,12 @@ target_link_libraries(imu_controller_node
    ${catkin_LIBRARIES}
 )
 
-target_link_libraries(rosbot_class
+target_link_libraries(rosbot_move
+  rosbot_lib  # Link the rosbot_lib library here
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(rosbot_move
    ${catkin_LIBRARIES}
 )
 

@@ -16,7 +16,6 @@ class ROSbot {
  private:
   ros::NodeHandle nh;
 
-  std::vector<float> laser_range;
   // subscribers
   ros::Subscriber laser_sub;
   ros::Subscriber odom_sub;
@@ -39,6 +38,8 @@ class ROSbot {
 
  public:
   ROSbot();
+  std::vector<float> laser_range;
+
   void move();
   void move_forward(int time);
   void move_backwards(int time);
