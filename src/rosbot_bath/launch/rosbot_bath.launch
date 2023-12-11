@@ -10,6 +10,8 @@
 
   <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
   <node name="imu_controller_node" pkg="rosbot_bath" type="imu_controller_node"/>
+  <node pkg="rosbot_bath" type="test_move.py" name="rosbot_move"  output="screen"/>
+
 
   <arg name="world" default="$(find rosbot_bath)/worlds/2020_assessment_example.world"/>
   <arg name="paused" default="false"/>
