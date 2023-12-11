@@ -19,6 +19,14 @@ def clbk_laser(msg):
 
     if last_print_time is None:
         last_print_time = rospy.Time.now()
+    
+    step = 1
+    
+    # TODO FINISH THIS********************
+    '''lfront = slice(0*step,18*step)
+    rfront = slice(0*step,360*step)
+    right = slice(252*step, 288*step)'''
+# ****************************************
 
     regions = {
         'front': min(min(msg.ranges[:36] + msg.ranges[684:]), 10),
@@ -27,7 +35,7 @@ def clbk_laser(msg):
     }
 
     # State transition logic based on LiDAR data
-    safe_distance = 1.0  # Example safe distance threshold
+    safe_distance = 0.75  # Example safe distance threshold
     if regions['front'] < safe_distance:
         if regions['left'] < regions['right']:
             current_state = AVOID_OBSTACLE_RIGHT
