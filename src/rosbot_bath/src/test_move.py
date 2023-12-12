@@ -2,7 +2,7 @@
 import time
 import rospy
 from sensor_msgs.msg import LaserScan, Imu
-from geometry_msgs.msg import Twist
+from geometry_msgs.msg import Twist, Pose
 from nav_msgs.msg import Odometry
 
 # Global variables
@@ -48,8 +48,15 @@ def clbk_laser(msg):
     # Call state action 
     fsm_action()
 
-def odom_clbk(msg):x
-    pass
+def odom_clbk(msg):
+    global x, y
+    x = msg.pose.pose.position.x
+    y = msg.pose.pose.position.y
+
+
+def imu_clbk(msg):
+    global imu
+    imu = msg
 
 # Global variable to track the last turn time
 last_turn_time = 0
@@ -95,6 +102,9 @@ def main():
     rospy.init_node('obstacle_avoidance_fsm')
 
     rospy.Subscriber('/scan', LaserScan, clbk_laser)
+    rospy.Subscriber('/odom', Odometry, odom_clbk)
+    rospy.Subscriber('/imu', Odometry, imu_clbk)
+
 
     rospy.spin()
 
