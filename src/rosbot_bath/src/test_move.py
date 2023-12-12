@@ -1,8 +1,9 @@
 #! /usr/bin/env python3
 import time
 import rospy
-from sensor_msgs.msg import LaserScan
+from sensor_msgs.msg import LaserScan, Imu
 from geometry_msgs.msg import Twist
+from nav_msgs.msg import Odometry
 
 # Global variables
 current_state = "Forward"
@@ -46,6 +47,9 @@ def clbk_laser(msg):
 
     # Call state action 
     fsm_action()
+
+def odom_clbk(msg):x
+    pass
 
 # Global variable to track the last turn time
 last_turn_time = 0
