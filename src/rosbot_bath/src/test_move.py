@@ -1,5 +1,6 @@
 #! /usr/bin/env python3
 import time
+import numpy as np
 import rospy
 from sensor_msgs.msg import LaserScan, Imu
 from geometry_msgs.msg import Twist, Pose
@@ -9,6 +10,9 @@ from nav_msgs.msg import Odometry
 current_state = "Forward"
 last_print_time = None
 pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
+odom = None
+total_distance = 0.0
+
 
 # State definitions
 FORWARD = "Forward"
@@ -49,9 +53,18 @@ def clbk_laser(msg):
     fsm_action()
 
 def odom_clbk(msg):
-    global x, y
-    x = msg.pose.pose.position.x
-    y = msg.pose.pose.position.y
+    global odom, total_distance
+    if odom is not None:
+        dx = msg.pose.pose.position.x - odom.pose.pose.position.x
+        dy = msg.pose.pose.position.y - odom.pose.pose.position.y
+
+        distance = np.sqrt(dx**2+dy**2)
+
+        total_distance += distance
+
+    odom = msg
+
+    rospy.loginfo("Total Traveled Distance: {:.2f} meters".format(total_distance))
 
 
 def imu_clbk(msg):
@@ -103,7 +116,7 @@ def main():
 
     rospy.Subscriber('/scan', LaserScan, clbk_laser)
     rospy.Subscriber('/odom', Odometry, odom_clbk)
-    rospy.Subscriber('/imu', Odometry, imu_clbk)
+    rospy.Subscriber('/imu', Imu, imu_clbk)
 
 
     rospy.spin()
