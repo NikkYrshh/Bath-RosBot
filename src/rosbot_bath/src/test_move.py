@@ -2,6 +2,7 @@
 import time
 import numpy as np
 import rospy
+import tf
 from sensor_msgs.msg import LaserScan, Imu
 from geometry_msgs.msg import Twist, Pose
 from nav_msgs.msg import Odometry
@@ -12,6 +13,8 @@ last_print_time = None
 pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 odom = None
 total_distance = 0.0
+target_yaw = None
+current_yaw = None
 
 
 # State definitions
@@ -68,8 +71,61 @@ def odom_clbk(msg):
 
 
 def imu_clbk(msg):
-    global imu
-    imu = msg
+    global target_yaw
+
+    quaternion = (
+        msg.orientation.x,
+        msg.orientation.y,
+        msg.orientation.z,
+        msg.orientation.w
+        )
+
+    # convert to Euler 
+    euler = tf.transformations.euler_from_quaternion(quaternion)
+    roll = euler[0]
+    pitch = euler[1]
+    yaw = euler[2]
+
+    if target_yaw is None:
+        target_yaw = yaw
+    rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {yaw}\nError:{abs(target_yaw-yaw)}")
+    '''
+    TODO Implement these ideas:
+
+    yaw_difference = target_yaw - yaw
+
+    # Normalize the angle difference to the range [-pi, pi] or [-180, 180]
+    yaw_difference = normalize_angle(yaw_difference) pseudo
+
+    if yaw_difference > angle_tolerance:
+        # Turn right
+        send_motor_command(right_turn_speed)
+    elif yaw_difference < -angle_tolerance:
+        # Turn left
+        send_motor_command(left_turn_speed)
+    else:
+        # On the right track, proceed forward
+        send_motor_command(forward_speed)
+        
+    ........................................
+        while True:
+    yaw = get_current_yaw()  # Obtain current yaw from IMU
+    yaw_error = target_yaw - current_yaw
+
+    if abs(yaw_error) <= angle_tolerance:
+        # If error is within the acceptable range, break the loop
+        break
+
+    if yaw_error > 0:
+        # If error is positive, turn right
+        send_motor_command(right_turn_speed)
+    else:
+        # If error is negative, turn left
+        send_motor_command(left_turn_speed)
+
+'''
+
+
 
 # Global variable to track the last turn time
 last_turn_time = 0
