@@ -4,17 +4,25 @@ import numpy as np
 import rospy
 import tf
 from sensor_msgs.msg import LaserScan, Imu
-from geometry_msgs.msg import Twist, Pose
+from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
 
 # Global variables
+# States
 current_state = "Forward"
+last_state = None
+
 last_print_time = None
 pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 odom = None
 total_distance = 0.0
+prev_distance = 0
 target_yaw = None
 current_yaw = None
+
+# Global variable to track the last turn time
+last_turn_time = 0
+turn_delay = 1.0  # Delay 
 
 
 # State definitions
@@ -23,7 +31,7 @@ AVOID_OBSTACLE_LEFT = "AvoidLeft"
 AVOID_OBSTACLE_RIGHT = "AvoidRight"
 
 def clbk_laser(msg):
-    global current_state, last_print_time
+    global current_state, last_print_time, prev_distance
 
     if last_print_time is None:
         last_print_time = rospy.Time.now()
@@ -88,7 +96,7 @@ def imu_clbk(msg):
 
     if target_yaw is None:
         target_yaw = yaw
-    rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {yaw}\nError:{abs(target_yaw-yaw)}")
+    #rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {yaw}\nError:{abs(target_yaw-yaw)}")
     '''
     TODO Implement these ideas:
 
@@ -126,23 +134,26 @@ def imu_clbk(msg):
 '''
 
 
-
-# Global variable to track the last turn time
-last_turn_time = 0
-turn_delay = 1.0  # Delay 
-
 def fsm_action():
-    global current_state, last_turn_time
+    global current_state, last_turn_time, last_state, prev_distance
     current_time = time.time()
 
     if current_state == FORWARD:
+        if last_state != FORWARD:
+            rospy.loginfo("New FORWARD state detected. Resetting distance.")
+            prev_distance = total_distance
         move_forward()
+        distance = total_distance-prev_distance
+
+        rospy.loginfo(f"Distance travelled: {distance}")
+
     elif current_state == AVOID_OBSTACLE_LEFT and (current_time - last_turn_time) > turn_delay:
         turn_left()
         last_turn_time = current_time
     elif current_state == AVOID_OBSTACLE_RIGHT and (current_time - last_turn_time) > turn_delay:
         turn_right()
         last_turn_time = current_time
+    last_state = current_state
 
 
 def turn_left():
