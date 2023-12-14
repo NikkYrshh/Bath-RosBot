@@ -36,19 +36,25 @@ def clbk_laser(msg):
     if last_print_time is None:
         last_print_time = rospy.Time.now()
     
-    step = 1
-    
-    # TODO FINISH THIS********************
-    '''lfront = slice(0*step,18*step)
-    rfront = slice(0*step,360*step)
-    right = slice(252*step, 288*step)'''
-# ****************************************
+    step = 2
+  
+    lfront = slice(0*step,18*step)
+    rfront = slice(342*step,360*step)
+    right = slice(252*step, 288*step)
+    left = slice(72*step, 108*step)
 
-    regions = {
+    '''regions = {
         'front': min(min(msg.ranges[:36] + msg.ranges[684:]), 10),
         'right': min(min(msg.ranges[504:576]), 10),
         'left': min(min(msg.ranges[144:216]), 10),
+    }'''
+
+    regions = {
+        'front': min(min(msg.ranges[lfront] + msg.ranges[rfront]), 10),
+        'right': min(min(msg.ranges[right]), 10),
+        'left': min(min(msg.ranges[left]), 10),
     }
+
 
     # State transition logic based on LiDAR data
     safe_distance = 0.75  # Example safe distance threshold
@@ -161,14 +167,14 @@ def turn_left():
     msg.linear.x = -0.1  # Slight backward movement
     msg.angular.z = 1.0  # Left turn
     pub.publish(msg)
-    rospy.sleep(0.5)  # Back up for a short duration before turning
+    #rospy.sleep(0.5)  # Back up for a short duration before turning
 
 def turn_right():
     msg = Twist()
     msg.linear.x = -0.1  # Slight backward movement
     msg.angular.z = -1.0  # Right turn
     pub.publish(msg)
-    rospy.sleep(0.5) 
+    #rospy.sleep(0.5) 
 
 
 def move_forward():
