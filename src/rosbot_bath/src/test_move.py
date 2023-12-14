@@ -60,7 +60,7 @@ def clbk_laser(msg):
 
 
     # State transition logic based on LiDAR data
-    safe_distance = 0.75  # Safe distance threshold
+    safe_distance = 0.6  # Safe distance threshold
     if regions['front'] < safe_distance:
         if regions['left'] < regions['right']:
             current_state = AVOID_OBSTACLE_RIGHT
@@ -70,7 +70,7 @@ def clbk_laser(msg):
     elif distance_in_fwd >= 1:
             yaw_error = normalize_angle(0 - current_yaw)
             
-            if abs(yaw_error) > 0.3:
+            if abs(yaw_error) > 0.2:
                 current_state = CORRECTION
             else:
                 current_state = FORWARD
@@ -130,7 +130,7 @@ def fsm_action():
     current_time = time.time()
 
     if current_state == FORWARD:
-        if last_state != FORWARD and last_state != CORRECTION :
+        if last_state != FORWARD:
             #rospy.loginfo("New FORWARD state detected. Resetting distance.")
             prev_distance = total_distance
         move_forward()
@@ -158,11 +158,11 @@ def fsm_action():
             
         else:
             # Proportional control for smoother turning
-            Kp = 0.5  # Gain factor, adjust as needed
+            Kp = 1  # Gain factor, adjust as needed
             angular_velocity = Kp * yaw_error
 
             # Limit the angular velocity to avoid overcorrection
-            max_angular_velocity = 0.5
+            max_angular_velocity = 1
             angular_velocity = max(min(angular_velocity, max_angular_velocity), -max_angular_velocity)
 
             # Send turn command
@@ -183,14 +183,14 @@ def fsm_action():
 
 def turn_left():
     msg = Twist()
-    msg.linear.x = -0.1  # Slight backward movement
+    msg.linear.x = -0.15  # Slight backward movement
     msg.angular.z = 1.0  # Left turn
     pub.publish(msg)
     rospy.sleep(0.5)  # Back up for a short duration before turning
 
 def turn_right():
     msg = Twist()
-    msg.linear.x = -0.1  # Slight backward movement
+    msg.linear.x = -0.15  # Slight backward movement
     msg.angular.z = -1.0  # Right turn
     pub.publish(msg)
     rospy.sleep(0.5) 
