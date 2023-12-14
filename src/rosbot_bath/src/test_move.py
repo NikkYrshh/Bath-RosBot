@@ -17,8 +17,10 @@ pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 odom = None
 total_distance = 0.0
 prev_distance = 0
-target_yaw = None
+target_yaw = 0
 current_yaw = None
+distance_in_fwd = 0
+yaw_error = 0
 
 # Global variable to track the last turn time
 last_turn_time = 0
@@ -29,9 +31,10 @@ turn_delay = 1.0  # Delay
 FORWARD = "Forward"
 AVOID_OBSTACLE_LEFT = "AvoidLeft"
 AVOID_OBSTACLE_RIGHT = "AvoidRight"
+CORRECTION = "Correction"
 
 def clbk_laser(msg):
-    global current_state, last_print_time, prev_distance
+    global current_state, last_print_time, distance_in_fwd, yaw_error
 
     if last_print_time is None:
         last_print_time = rospy.Time.now()
@@ -57,17 +60,36 @@ def clbk_laser(msg):
 
 
     # State transition logic based on LiDAR data
-    safe_distance = 0.75  # Example safe distance threshold
+    safe_distance = 0.75  # Safe distance threshold
     if regions['front'] < safe_distance:
         if regions['left'] < regions['right']:
             current_state = AVOID_OBSTACLE_RIGHT
         else:
             current_state = AVOID_OBSTACLE_LEFT
+    
+    elif distance_in_fwd >= 1:
+            yaw_error = normalize_angle(0 - current_yaw)
+            
+            if abs(yaw_error) > 0.3:
+                current_state = CORRECTION
+            else:
+                current_state = FORWARD
+    
     else:
         current_state = FORWARD
+    
+    rospy.loginfo(f"Distance in clbk: {distance_in_fwd}")
+ 
+    fsm_action()                       
 
-    # Call state action 
-    fsm_action()
+def normalize_angle(angle):
+    while angle > np.pi:
+        angle -= 2 * np.pi
+    while angle < -np.pi:
+        angle += 2 * np.pi
+    return angle
+
+    
 
 def odom_clbk(msg):
     global odom, total_distance
@@ -81,11 +103,11 @@ def odom_clbk(msg):
 
     odom = msg
 
-    rospy.loginfo("Total Traveled Distance: {:.2f} meters".format(total_distance))
+    #rospy.loginfo("Total Traveled Distance: {:.2f} meters".format(total_distance))
 
 
 def imu_clbk(msg):
-    global target_yaw
+    global current_yaw
 
     quaternion = (
         msg.orientation.x,
@@ -98,60 +120,55 @@ def imu_clbk(msg):
     euler = tf.transformations.euler_from_quaternion(quaternion)
     roll = euler[0]
     pitch = euler[1]
-    yaw = euler[2]
+    current_yaw = euler[2]
 
-    if target_yaw is None:
-        target_yaw = yaw
-    #rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {yaw}\nError:{abs(target_yaw-yaw)}")
-    '''
-    TODO Implement these ideas:
-
-    yaw_difference = target_yaw - yaw
-
-    # Normalize the angle difference to the range [-pi, pi] or [-180, 180]
-    yaw_difference = normalize_angle(yaw_difference) pseudo
-
-    if yaw_difference > angle_tolerance:
-        # Turn right
-        send_motor_command(right_turn_speed)
-    elif yaw_difference < -angle_tolerance:
-        # Turn left
-        send_motor_command(left_turn_speed)
-    else:
-        # On the right track, proceed forward
-        send_motor_command(forward_speed)
-        
-    ........................................
-        while True:
-    yaw = get_current_yaw()  # Obtain current yaw from IMU
-    yaw_error = target_yaw - current_yaw
-
-    if abs(yaw_error) <= angle_tolerance:
-        # If error is within the acceptable range, break the loop
-        break
-
-    if yaw_error > 0:
-        # If error is positive, turn right
-        send_motor_command(right_turn_speed)
-    else:
-        # If error is negative, turn left
-        send_motor_command(left_turn_speed)
-
-'''
+    rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {current_yaw}\n")
 
 
 def fsm_action():
-    global current_state, last_turn_time, last_state, prev_distance
+    global current_state, last_turn_time, last_state, distance_in_fwd, prev_distance
     current_time = time.time()
 
     if current_state == FORWARD:
-        if last_state != FORWARD:
-            rospy.loginfo("New FORWARD state detected. Resetting distance.")
+        if last_state != FORWARD and last_state != CORRECTION :
+            #rospy.loginfo("New FORWARD state detected. Resetting distance.")
             prev_distance = total_distance
         move_forward()
-        distance = total_distance-prev_distance
+        distance_in_fwd = total_distance-prev_distance
 
-        rospy.loginfo(f"Distance travelled: {distance}")
+        rospy.loginfo(f"FWD Distance travelled in FSM: {distance_in_fwd}")
+        rospy.loginfo(f"TOTAL Distance travelled in FSM: {total_distance}")
+
+    elif current_state == CORRECTION:
+        yaw_error = normalize_angle(target_yaw - current_yaw)
+
+        # Check if the robot is close enough to the target orientation
+        if abs(yaw_error) <= 0.1:  # Threshold to exit correction state
+            current_state = FORWARD
+            '''if yaw_error > 0:
+                    # Turn right
+                msg = Twist()
+                msg.angular.z = -1 
+                pub.publish(msg)
+            else:
+                    # Turn left
+                msg = Twist()
+                msg.angular.z = 1  
+                pub.publish(msg)'''
+            
+        else:
+            # Proportional control for smoother turning
+            Kp = 0.5  # Gain factor, adjust as needed
+            angular_velocity = Kp * yaw_error
+
+            # Limit the angular velocity to avoid overcorrection
+            max_angular_velocity = 0.5
+            angular_velocity = max(min(angular_velocity, max_angular_velocity), -max_angular_velocity)
+
+            # Send turn command
+            msg = Twist()
+            msg.angular.z = angular_velocity
+            pub.publish(msg)
 
     elif current_state == AVOID_OBSTACLE_LEFT and (current_time - last_turn_time) > turn_delay:
         turn_left()
@@ -159,6 +176,8 @@ def fsm_action():
     elif current_state == AVOID_OBSTACLE_RIGHT and (current_time - last_turn_time) > turn_delay:
         turn_right()
         last_turn_time = current_time
+    
+    rospy.loginfo(f"State: {current_state}\n")
     last_state = current_state
 
 
@@ -167,14 +186,14 @@ def turn_left():
     msg.linear.x = -0.1  # Slight backward movement
     msg.angular.z = 1.0  # Left turn
     pub.publish(msg)
-    #rospy.sleep(0.5)  # Back up for a short duration before turning
+    rospy.sleep(0.5)  # Back up for a short duration before turning
 
 def turn_right():
     msg = Twist()
     msg.linear.x = -0.1  # Slight backward movement
     msg.angular.z = -1.0  # Right turn
     pub.publish(msg)
-    #rospy.sleep(0.5) 
+    rospy.sleep(0.5) 
 
 
 def move_forward():
