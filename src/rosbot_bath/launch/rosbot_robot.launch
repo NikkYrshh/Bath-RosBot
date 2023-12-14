@@ -1,6 +1,7 @@
 <?xml version="1.0"?>
 <launch>
-    <include filename="$(find rplidar_ros)/launch/rplidar.launch"/>
-    <include filename="$(find rosbot_ekf)/launch/rosserial_bridge.launch"/>
+    <include file="$(find rosbot_ekf)/launch/rosserial_bridge.launch"/>
+    <include file="$(find rosbot_ekf)/launch/message_conversion.launch"/>
+    <include file="$(find rplidar_ros)/launch/rplidar.launch"/>
     <node pkg="rosbot_bath" type="test_move.py" name="rosbot_move"  output="screen"/>
 </launch>
