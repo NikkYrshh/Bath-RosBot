@@ -6,12 +6,14 @@ import tf
 from sensor_msgs.msg import LaserScan, Imu
 from geometry_msgs.msg import Twist
 from nav_msgs.msg import Odometry
+from sensor_msgs.msg import Range
 
-# Global variables
+
 # States
 current_state = "Forward"
 last_state = None
 
+# Global variables
 last_print_time = None
 pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 odom = None
@@ -22,6 +24,9 @@ current_yaw = None
 distance_in_fwd = 0
 yaw_error = 0
 
+# Range sensors
+range_fl = 0.7 
+range_fr = 0.7
 # Global variable to track the last turn time
 last_turn_time = 0
 turn_delay = 1.0  # Delay 
@@ -33,8 +38,18 @@ AVOID_OBSTACLE_LEFT = "AvoidLeft"
 AVOID_OBSTACLE_RIGHT = "AvoidRight"
 CORRECTION = "Correction"
 
+# Range sensors clbks
+def Rangefl(msg):
+    global range_fl
+    range_fl = msg.range
+
+def Rangefr(msg):
+    global range_fr
+    range_fr = msg.range
+
+
 def clbk_laser(msg):
-    global current_state, last_print_time, distance_in_fwd, yaw_error
+    global current_state, last_print_time, distance_in_fwd, yaw_error, range_fl, range_fr
 
     if last_print_time is None:
         last_print_time = rospy.Time.now()
@@ -60,8 +75,9 @@ def clbk_laser(msg):
 
 
     # State transition logic based on LiDAR data
-    safe_distance = 0.6  # Safe distance threshold
-    if regions['front'] < safe_distance:
+    safe_distance = 0.6  # Safe distance threshold for laser
+    safe_dist_rng = 0.5
+    if regions['front'] < safe_distance or range_fl < safe_dist_rng or range_fr < safe_dist_rng :
         if regions['left'] < regions['right']:
             current_state = AVOID_OBSTACLE_RIGHT
         else:
@@ -206,9 +222,13 @@ def main():
     global pub
     rospy.init_node('obstacle_avoidance_fsm')
 
+    # Subscribers
+    rospy.Subscriber('/range_fl', Range, Rangefl)
+    rospy.Subscriber('/range_fr', Range, Rangefr)
     rospy.Subscriber('/scan', LaserScan, clbk_laser)
     rospy.Subscriber('/odom', Odometry, odom_clbk)
     rospy.Subscriber('/imu', Imu, imu_clbk)
+    
 
 
     rospy.spin()
