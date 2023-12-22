@@ -86,7 +86,7 @@ def clbk_laser(msg):
     elif distance_in_fwd >= 1:
             yaw_error = normalize_angle(0 - current_yaw)
             
-            if abs(yaw_error) > 0.2:
+            if abs(yaw_error) > 0.1:
                 current_state = CORRECTION
             else:
                 current_state = FORWARD
@@ -174,7 +174,7 @@ def fsm_action():
             
         else:
             # Proportional control for smoother turning
-            Kp = 1  # Gain factor, adjust as needed
+            Kp = 1.5  # Gain factor, adjust as needed
             angular_velocity = Kp * yaw_error
 
             # Limit the angular velocity to avoid overcorrection
