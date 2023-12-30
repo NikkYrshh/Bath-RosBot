@@ -62,8 +62,6 @@ class RosbotFSM:
 
 
     def clbk_laser(self, msg):
-        #if last_print_time is None:
-            #last_print_time = rospy.Time.now()
         
         step = 2
     
@@ -166,16 +164,6 @@ class RosbotFSM:
             # Check if the robot is close enough to the target orientation
             if abs(yaw_error) <= 0.1:  # Threshold to exit correction state
                 self.current_state = self.FORWARD
-                '''if yaw_error > 0:
-                        # Turn right
-                    msg = Twist()
-                    msg.angular.z = -1 
-                    pub.publish(msg)
-                else:
-                        # Turn left
-                    msg = Twist()
-                    msg.angular.z = 1  
-                    pub.publish(msg)'''
                 
             else:
                 # Proportional control for smoother turning
