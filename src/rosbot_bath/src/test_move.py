@@ -17,6 +17,15 @@ class RosbotFSM:
     AVOID_OBSTACLE_RIGHT = "AvoidRight"
     CORRECTION = "Correction"
     STOP = "Stop"
+    
+    # const thresholds and values
+    SAFE_DISTANCE = 0.65 # lidar
+    SAFE_DIST_RNG = 0.4 # IR
+    YAW_THRESHOLD = 0.1
+    FRWD_DIST_THRESHOLD = 0.9 # travelled forward distance threshold
+    MAX_ANGULAR_VELOCITY = 1
+    STEP = 2
+
     def __init__(self):
         # States
         self.current_state = "Forward"
@@ -64,13 +73,10 @@ class RosbotFSM:
 
     def clbk_laser(self, msg):
         
-        step = 2
-    
-        lfront = slice(0*step,18*step)
-        rfront = slice(342*step,360*step)
-        right = slice(252*step, 288*step)
-        left = slice(72*step, 108*step)
-
+        lfront = slice(0*self.STEP,18*self.STEP)
+        rfront = slice(342*self.STEP,360*self.STEP)
+        right = slice(252*self.STEP, 288*self.STEP)
+        left = slice(72*self.STEP, 108*self.STEP)
 
         regions = {
             'front': min(min(msg.ranges[lfront] + msg.ranges[rfront]), 10),
@@ -78,22 +84,20 @@ class RosbotFSM:
             'left': min(min(msg.ranges[left]), 10),
         }
 
-
         # State transition logic based on LiDAR data
-        safe_distance = 0.65  # Safe distance threshold for laser
-        self.safe_dist_rng = 0.3
-        if regions['front'] < safe_distance:
-        #if regions['front'] < safe_distance or range_fl < safe_dist_rng or range_fr < safe_dist_rng :
+          # Safe distance threshold for laser
+        if regions['front'] < self.SAFE_DISTANCE:
+        #if regions['front'] < safe_distance or range_fl < self.SAFE_DIST_RNG or range_fr < self.SAFE_DIST_RNG :
 
             if regions['left'] < regions['right']:
                 self.current_state = self.AVOID_OBSTACLE_RIGHT
             else:
                 self.current_state = self.AVOID_OBSTACLE_LEFT
         
-        elif self.distance_in_fwd >= 0.9:
+        elif self.distance_in_fwd >= self.FRWD_DIST_THRESHOLD :
                 yaw_error = self.normalize_angle(0 - self.current_yaw)
                 
-                if abs(yaw_error) > 0.1:
+                if abs(yaw_error) > self.YAW_THRESHOLD:
                     self.current_state = self.CORRECTION
                 else:
                     self.current_state = self.FORWARD
@@ -182,8 +186,8 @@ class RosbotFSM:
                 angular_velocity = Kp * yaw_error
 
                 # Limit the angular velocity to avoid overcorrection
-                max_angular_velocity = 1
-                angular_velocity = max(min(angular_velocity, max_angular_velocity), -max_angular_velocity)
+                
+                angular_velocity = max(min(angular_velocity, self.MAX_ANGULAR_VELOCITY), -self.MAX_ANGULAR_VELOCITY)
 
                 # Send turn command
                 msg = Twist()
