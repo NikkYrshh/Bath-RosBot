@@ -16,7 +16,7 @@ class RosbotFSM:
     AVOID_OBSTACLE_LEFT = "AvoidLeft"
     AVOID_OBSTACLE_RIGHT = "AvoidRight"
     CORRECTION = "Correction"
-
+    STOP = "Stop"
     def __init__(self):
         # States
         self.current_state = "Forward"
@@ -30,6 +30,7 @@ class RosbotFSM:
         self.rev_distance = 0
         self.target_yaw = 0
         self.current_yaw = None
+        self.pitch_counter = 0
         self.distance_in_fwd = 0
         self.yaw_error = 0
 
@@ -79,7 +80,7 @@ class RosbotFSM:
 
 
         # State transition logic based on LiDAR data
-        safe_distance = 0.5  # Safe distance threshold for laser
+        safe_distance = 0.65  # Safe distance threshold for laser
         self.safe_dist_rng = 0.3
         if regions['front'] < safe_distance:
         #if regions['front'] < safe_distance or range_fl < safe_dist_rng or range_fr < safe_dist_rng :
@@ -100,7 +101,7 @@ class RosbotFSM:
         else:
             self.current_state = self.FORWARD
         
-        rospy.loginfo(f"Distance in clbk: {self.distance_in_fwd}")
+        #rospy.loginfo(f"Distance in clbk: {self.distance_in_fwd}")
     
         self.fsm_action()                       
 
@@ -139,10 +140,20 @@ class RosbotFSM:
         # convert to Euler 
         euler = tf.transformations.euler_from_quaternion(quaternion)
         #roll = euler[0]
-        #pitch = euler[1]
+        pitch = euler[1]
         self.current_yaw = euler[2]
+        rospy.loginfo(f"Pitch: {pitch}\n")
+        
+        '''if abs(pitch) > 0.5:
+            self.pitch_counter +=1
+            if self.pitch_counter > 3:
+                self.current_state = self.STOP
+                self.pitch_counter = 0
+                self.fsm_action()'''
 
-        #rospy.loginfo(f"Target direction: {target_yaw}\nCurrent direction: {current_yaw}\n")
+            
+
+        #rospy.loginfo(f"Target direction: {self.target_yaw}\nCurrent direction: {self.current_yaw}\n")
 
 
     def fsm_action(self):
@@ -155,8 +166,8 @@ class RosbotFSM:
             self.move_forward()
             self.distance_in_fwd = self.total_distance-self.prev_distance
 
-            rospy.loginfo(f"FWD Distance travelled in FSM: {self.distance_in_fwd}")
-            rospy.loginfo(f"TOTAL Distance travelled in FSM: {self.total_distance}")
+            #rospy.loginfo(f"FWD Distance travelled in FSM: {self.distance_in_fwd}")
+            #rospy.loginfo(f"TOTAL Distance travelled in FSM: {self.total_distance}")
 
         elif self.current_state == self.CORRECTION:
             yaw_error = self.normalize_angle(self.target_yaw - self.current_yaw)
@@ -185,8 +196,12 @@ class RosbotFSM:
         elif self.current_state == self.AVOID_OBSTACLE_RIGHT and (current_time - self.last_turn_time) > self.turn_delay:
             self.turn_right()
             self.last_turn_time = current_time
+        elif self.current_state == self.STOP:
+            self.stop()
+
+
         
-        rospy.loginfo(f"State: {self.current_state}\n")
+        #rospy.loginfo(f"State: {self.current_state}\n")
         self.last_state = self.current_state
 
 
@@ -210,6 +225,13 @@ class RosbotFSM:
         msg.linear.x = 0.5  # Forward speed
         msg.angular.z = 0   # No rotation
         self.pub.publish(msg)
+    
+    def stop(self):
+        msg = Twist()
+        msg.linear.x = 0.0  # Forward speed
+        msg.angular.z = 0   # No rotation
+        self.pub.publish(msg)
+        rospy.sleep(0.5) 
 
 def main():
     
