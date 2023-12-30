@@ -18,6 +18,13 @@ class RosbotFSM:
     CORRECTION = "Correction"
     STOP = "Stop"
     
+    # topic names
+    TOPIC_IMU = "/imu"
+    TOPIC_ODOM = "/odom"
+    TOPIC_SCAN = "/scan"
+    TOPIC_RANGEFL = "/range/fl"
+    TOPIC_RANGEFR = "/range/fr"
+
     # const thresholds and values
     SAFE_DISTANCE = 0.65 # lidar
     SAFE_DIST_RNG = 0.4 # IR
@@ -52,14 +59,14 @@ class RosbotFSM:
         self.turn_delay = 1.0  # Delay 
 
         # ros init
-        rospy.init_node('obstacle_avoidance_fsm')
+        rospy.init_node("obstacle_avoidance_fsm")
         
         # subscribers
-        rospy.Subscriber('/range/fl', Range, self.Rangefl)
-        rospy.Subscriber('/range/fr', Range, self.Rangefr)
-        rospy.Subscriber('/scan', LaserScan, self.clbk_laser)
-        rospy.Subscriber('/odom', Odometry, self.odom_clbk)
-        rospy.Subscriber('/imu', Imu, self.imu_clbk)
+        rospy.Subscriber(self.TOPIC_RANGEFL, Range, self.Rangefl)
+        rospy.Subscriber(self.TOPIC_RANGEFR, Range, self.Rangefr)
+        rospy.Subscriber(self.TOPIC_SCAN, LaserScan, self.clbk_laser)
+        rospy.Subscriber(self.TOPIC_ODOM, Odometry, self.odom_clbk)
+        rospy.Subscriber(self.TOPIC_IMU, Imu, self.imu_clbk)
     
 
 
@@ -79,17 +86,17 @@ class RosbotFSM:
         left = slice(72*self.STEP, 108*self.STEP)
 
         regions = {
-            'front': min(min(msg.ranges[lfront] + msg.ranges[rfront]), 10),
-            'right': min(min(msg.ranges[right]), 10),
-            'left': min(min(msg.ranges[left]), 10),
+            "front": min(min(msg.ranges[lfront] + msg.ranges[rfront]), 10),
+            "right": min(min(msg.ranges[right]), 10),
+            "left": min(min(msg.ranges[left]), 10),
         }
 
         # State transition logic based on LiDAR data
           # Safe distance threshold for laser
-        if regions['front'] < self.SAFE_DISTANCE:
+        if regions["front"] < self.SAFE_DISTANCE:
         #if regions['front'] < safe_distance or range_fl < self.SAFE_DIST_RNG or range_fr < self.SAFE_DIST_RNG :
 
-            if regions['left'] < regions['right']:
+            if regions["left"] < regions["right"]:
                 self.current_state = self.AVOID_OBSTACLE_RIGHT
             else:
                 self.current_state = self.AVOID_OBSTACLE_LEFT
