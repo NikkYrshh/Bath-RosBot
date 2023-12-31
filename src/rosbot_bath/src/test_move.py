@@ -18,12 +18,7 @@ class RosbotFSM:
     CORRECTION = "Correction"
     STOP = "Stop"
     
-    # topic names
-    TOPIC_IMU = "/imu"
-    TOPIC_ODOM = "/odom"
-    TOPIC_SCAN = "/scan"
-    TOPIC_RANGEFL = "/range/fl"
-    TOPIC_RANGEFR = "/range/fr"
+    
 
     # const thresholds and values
     SAFE_DISTANCE = 0.65 # lidar
@@ -33,14 +28,29 @@ class RosbotFSM:
     MAX_ANGULAR_VELOCITY = 1
     STEP = 2
 
-    def __init__(self):
+    def __init__(self, namespace=""):
+        
+        # topic names
+        '''self.namespace = namespace
+        self.TOPIC_IMU = namespace + "/imu"
+        self.TOPIC_ODOM = namespace + "/odom"
+        self.TOPIC_SCAN = namespace + "/scan"
+        self.TOPIC_RANGEFL = namespace + "/range/fl"
+        self.TOPIC_RANGEFR = namespace + "/range/fr"
+        self.CMD_VEL_TOPIC = namespace + "/cmd_vel"'''
+        self.TOPIC_IMU = "/" + namespace + "/imu"
+        self.TOPIC_ODOM = "/" + namespace + "/odom"
+        self.TOPIC_SCAN = "/" + namespace + "/scan"
+        self.TOPIC_RANGEFL = "/" + namespace + "/range/fl"
+        self.TOPIC_RANGEFR = "/" + namespace + "/range/fr"
+        self.CMD_VEL_TOPIC = "/" + namespace + "/cmd_vel"
+        
         # States
         self.current_state = "Forward"
         self.last_state = None
 
         # Global variables
         self.last_print_time = None
-        self.pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
         self.odom = None
         self.total_distance = 0.0
         self.rev_distance = 0
@@ -61,12 +71,19 @@ class RosbotFSM:
         # ros init
         rospy.init_node("obstacle_avoidance_fsm")
         
+        #publisher
+        self.pub = rospy.Publisher(self.CMD_VEL_TOPIC, Twist, queue_size=1)
+        
         # subscribers
         rospy.Subscriber(self.TOPIC_RANGEFL, Range, self.Rangefl)
         rospy.Subscriber(self.TOPIC_RANGEFR, Range, self.Rangefr)
         rospy.Subscriber(self.TOPIC_SCAN, LaserScan, self.clbk_laser)
         rospy.Subscriber(self.TOPIC_ODOM, Odometry, self.odom_clbk)
         rospy.Subscriber(self.TOPIC_IMU, Imu, self.imu_clbk)
+
+       
+
+        
     
 
 
@@ -162,8 +179,6 @@ class RosbotFSM:
                 self.pitch_counter = 0
                 self.fsm_action()'''
 
-            
-
         #rospy.loginfo(f"Target direction: {self.target_yaw}\nCurrent direction: {self.current_yaw}\n")
 
 
@@ -211,7 +226,6 @@ class RosbotFSM:
             self.stop()
 
 
-        
         #rospy.loginfo(f"State: {self.current_state}\n")
         self.last_state = self.current_state
 
@@ -246,7 +260,8 @@ class RosbotFSM:
 
 def main():
     
-    rosbot_fsm = RosbotFSM()
+    rosbot_fsm_1 = RosbotFSM()
+    rosbot_fsm_2 = RosbotFSM(namespace="second_rosbot")
     rospy.spin()
 
 if __name__ == '__main__':

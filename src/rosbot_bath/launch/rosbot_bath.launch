@@ -1,17 +1,16 @@
 <?xml version="1.0"?>
 <launch>
-  <group ns="first_rosbot">
-    <rosparam command="load" file="$(find joint_state_controller)/joint_state_controller.yaml" />
-    <node name="joint_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joint_state_controller" />
 
-    <param name="robot_description" command="$(find xacro)/xacro '$(find rosbot_bath)/urdf/rosbot.xacro'"/>
+  <rosparam command="load" file="$(find joint_state_controller)/joint_state_controller.yaml" />
+  <node name="joint_state_controller_spawner" pkg="controller_manager" type="spawner" output="screen" args="joint_state_controller" />
 
-    <node name="rosbot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param robot_description -model rosbot" />
+  <param name="robot_description" command="$(find xacro)/xacro '$(find rosbot_bath)/urdf/rosbot.xacro'"/>
 
-    <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
-    <node name="imu_controller_node" pkg="rosbot_bath" type="imu_controller_node"/>
-    <node pkg="rosbot_bath" type="test_move.py" name="rosbot_move"  output="screen"/>
-  </group>
+  <node name="rosbot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param robot_description -model rosbot" />
+
+  <node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
+  <node name="imu_controller_node" pkg="rosbot_bath" type="imu_controller_node"/>
+  <node pkg="rosbot_bath" type="test_move.py" name="rosbot_move"  output="screen"/>
 
   <group ns="second_rosbot">
     <rosparam command="load" file="$(find joint_state_controller)/joint_state_controller.yaml" />
