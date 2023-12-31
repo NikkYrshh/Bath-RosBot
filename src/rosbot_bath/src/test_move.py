@@ -31,13 +31,6 @@ class RosbotFSM:
     def __init__(self, namespace=""):
         
         # topic names
-        '''self.namespace = namespace
-        self.TOPIC_IMU = namespace + "/imu"
-        self.TOPIC_ODOM = namespace + "/odom"
-        self.TOPIC_SCAN = namespace + "/scan"
-        self.TOPIC_RANGEFL = namespace + "/range/fl"
-        self.TOPIC_RANGEFR = namespace + "/range/fr"
-        self.CMD_VEL_TOPIC = namespace + "/cmd_vel"'''
         self.TOPIC_IMU = "/" + namespace + "/imu"
         self.TOPIC_ODOM = "/" + namespace + "/odom"
         self.TOPIC_SCAN = "/" + namespace + "/scan"
@@ -95,7 +88,7 @@ class RosbotFSM:
         self.range_fr = msg.range
 
 
-    def clbk_laser(self, msg):
+    '''def clbk_laser(self, msg):
         
         lfront = slice(0*self.STEP,18*self.STEP)
         rfront = slice(342*self.STEP,360*self.STEP)
@@ -131,8 +124,58 @@ class RosbotFSM:
         
         #rospy.loginfo(f"Distance in clbk: {self.distance_in_fwd}")
     
-        self.fsm_action()                       
+        self.fsm_action()'''
 
+    def clbk_laser(self, msg):
+    # Existing region slices
+        lfront = slice(0*self.STEP, 18*self.STEP)
+        rfront = slice(342*self.STEP, 360*self.STEP)
+        right = slice(252*self.STEP, 288*self.STEP)
+        left = slice(72*self.STEP, 108*self.STEP)
+
+        # New slices for front-left and front-right
+        front_left = slice(18*self.STEP, 72*self.STEP)
+        front_right = slice(288*self.STEP, 342*self.STEP)
+
+        # Compute minimum distances for all regions
+        regions = {
+            "front": min(min(msg.ranges[lfront] + msg.ranges[rfront]), 10),
+            "right": min(min(msg.ranges[right]), 10),
+            "left": min(min(msg.ranges[left]), 10),
+            "front_left": min(min(msg.ranges[front_left]), 10),
+            "front_right": min(min(msg.ranges[front_right]), 10),
+        }
+
+        # State transition logic based on LiDAR data
+        if regions["front"] < self.SAFE_DISTANCE:
+            # Enhanced decision making considering front-left and front-right
+            if regions["front_left"] < self.SAFE_DISTANCE and regions["front_right"] < self.SAFE_DISTANCE:
+                # Both front-left and front-right are blocked
+                self.current_state = self.REVERSE_OR_STOP
+            elif regions["front_left"] < self.SAFE_DISTANCE:
+                # Front-left is blocked
+                self.current_state = self.AVOID_OBSTACLE_RIGHT
+            elif regions["front_right"] < self.SAFE_DISTANCE:
+                # Front-right is blocked
+                self.current_state = self.AVOID_OBSTACLE_LEFT
+            else:
+                # Default avoidance based on left and right regions only
+                if regions["left"] < regions["right"]:
+                    self.current_state = self.AVOID_OBSTACLE_RIGHT
+                else:
+                    self.current_state = self.AVOID_OBSTACLE_LEFT
+        elif self.distance_in_fwd >= self.FRWD_DIST_THRESHOLD:
+            yaw_error = self.normalize_angle(0 - self.current_yaw)
+            if abs(yaw_error) > self.YAW_THRESHOLD:
+                self.current_state = self.CORRECTION
+            else:
+                self.current_state = self.FORWARD
+        else:
+            self.current_state = self.FORWARD
+
+        # Call the state machine action
+        self.fsm_action()
+                       
     def normalize_angle(self, angle):
         while angle > np.pi:
             angle -= 2 * np.pi
