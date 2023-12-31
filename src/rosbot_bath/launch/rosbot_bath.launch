@@ -18,7 +18,7 @@
 
     <param name="robot_description" command="$(find xacro)/xacro '$(find rosbot_bath)/urdf/rosbot.xacro'"/>
 
-    <node name="second_rosbot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param robot_description -model second_rosbot -x 9 -y 0 -z 0" />
+    <node name="second_rosbot_spawn" pkg="gazebo_ros" type="spawn_model" output="screen" args="-urdf -param robot_description -model second_rosbot -x 1 -y 1 -z 1" />
 
     <node name="second_robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher"/>
     <node name="second_imu_controller_node" pkg="rosbot_bath" type="imu_controller_node"/>
