@@ -88,7 +88,7 @@ class RosbotFSM:
         self.range_fr = msg.range
 
 
-    '''def clbk_laser(self, msg):
+    def clbk_laser(self, msg):
         
         lfront = slice(0*self.STEP,18*self.STEP)
         rfront = slice(342*self.STEP,360*self.STEP)
@@ -124,9 +124,9 @@ class RosbotFSM:
         
         #rospy.loginfo(f"Distance in clbk: {self.distance_in_fwd}")
     
-        self.fsm_action()'''
+        self.fsm_action()
 
-    def clbk_laser(self, msg):
+    '''def clbk_laser(self, msg):
     # Existing region slices
         lfront = slice(0*self.STEP, 18*self.STEP)
         rfront = slice(342*self.STEP, 360*self.STEP)
@@ -174,7 +174,7 @@ class RosbotFSM:
             self.current_state = self.FORWARD
 
         # Call the state machine action
-        self.fsm_action()
+        self.fsm_action()'''
                        
     def normalize_angle(self, angle):
         while angle > np.pi:
