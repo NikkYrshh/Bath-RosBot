@@ -12,6 +12,9 @@ This project develops control software for the ROSBot robot to autonomously navi
 The main source code is in `src/test_move.py`, featuring FSM logic for controlling the robot's movements. This includes state management for various navigation scenarios and dynamic obstacle avoidance.
 
 ## Testing and Results
+[![](rosbot_moves.gif)](https://drive.google.com/file/d/1X1FKwL3_sECWUbxlS4unEQmh4Cp7kGId/view?usp=sharing)
+
+
 
 
 
